@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commut Fare Estimator: Car rides</title>
+<meta name="description" content="Estimate your fare per seat and your trip total with Commut standard rates. Car rides and event buses.">
+<meta name="theme-color" content="#0b6e4f">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="apple-touch-icon" href="favicon-192.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Commut">
+<meta property="og:title" content="Commut Fare Estimator: Car rides">
+<meta property="og:description" content="Estimate your fare per seat and your trip total with Commut standard rates. Car rides and event buses.">
+<meta property="og:url" content="https://maverick-defy.github.io/commut-fare-estimator/">
+<meta property="og:image" content="https://maverick-defy.github.io/commut-fare-estimator/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Commut fare estimator">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Commut Fare Estimator: Car rides">
+<meta name="twitter:description" content="Estimate your fare per seat and your trip total with Commut standard rates. Car rides and event buses.">
+<meta name="twitter:image" content="https://maverick-defy.github.io/commut-fare-estimator/og.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+:root{--ink:#14213d;--muted:#4f586b;--line:#d5dae3;--brand:#0b6e4f;--brand-d:#085740;--brand2:#e9f5f0;--warn:#fff6e0;--bad:#fdecec;--badink:#a02020;--bg:#f5f7fa}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+a{color:var(--brand-d)}
+:focus-visible{outline:3px solid #1f6fb5;outline-offset:2px}
+.skip{position:absolute;left:-999px;top:0;background:#fff;color:var(--ink);padding:8px 12px;z-index:100}
+.skip:focus{left:8px;top:8px}
+header{background:var(--brand);color:#fff;padding:18px 16px 20px}
+.hwrap{max-width:760px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{flex:none}
+.brand span{font-size:24px;font-weight:700;letter-spacing:.01em}
+header h1{margin:12px 0 0;font-size:20px;line-height:1.25;font-weight:600}
+header p{margin:6px 0 0;font-size:15px}
+main{max-width:760px;margin:0 auto;padding:14px 14px 28px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:17px}
+.card h3{margin:14px 0 4px;font-size:15px}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+input[type=text],input[type=number]{width:100%;padding:11px;border:1px solid #8a93a5;border-radius:8px;font-size:16px;background:#fff;color:var(--ink)}
+.field{position:relative}
+.sugg{position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);max-height:240px;overflow:auto;display:none}
+.sugg div{padding:11px;font-size:14px;border-bottom:1px solid var(--line);cursor:pointer}
+.sugg div:last-child{border-bottom:0}
+.sugg div:hover{background:var(--brand2)}
+.sugg .none{color:var(--muted);cursor:default}
+.picked{font-size:13px;color:var(--brand-d);margin-top:4px;word-break:break-word}
+.row{display:flex;gap:8px;align-items:flex-end}
+.row .field{flex:1;min-width:0}
+button{font:inherit;border:0;border-radius:8px;padding:11px 14px;cursor:pointer;min-height:44px}
+button:disabled{opacity:.6;cursor:default}
+.ghost{background:var(--brand2);color:var(--brand-d);font-weight:600}
+.rm{background:var(--bad);color:var(--badink)}
+.primary{background:var(--brand);color:#fff;font-weight:600;width:100%;margin-top:14px;font-size:16px}
+.primary:hover{background:var(--brand-d)}
+.pin{background:var(--brand2);color:var(--brand-d);font-weight:600;white-space:nowrap;padding:11px 12px}
+.seg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
+.seg button{background:#e9ecf1;color:var(--ink);flex:1;min-width:140px}
+.seg button.on,.seg button[aria-selected=true]{background:var(--brand);color:#fff;font-weight:600}
+.tabs{display:flex;gap:8px;margin:0 0 16px}
+.tabs a{flex:1;text-align:center;text-decoration:none;background:#e9ecf1;color:var(--ink);padding:12px 14px;border-radius:8px;font-size:16px;min-height:44px}
+.tabs a.on{background:var(--brand);color:#fff;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.row{flex-wrap:wrap}.row .field{flex:1 1 100%}.row .pin,.row .rm{flex:1}}
+.res{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px}
+.res h3{margin:0 0 6px;font-size:15px}
+.big{font-size:28px;font-weight:700;color:var(--brand-d);line-height:1.2}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:15px;margin-top:6px}
+th{font-size:13px;color:var(--muted);font-weight:600;text-align:right;padding:6px;border-bottom:2px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}
+.tw td{white-space:nowrap}
+td:last-child{padding-left:12px}
+tr.tot td{font-weight:700}
+.msg{background:var(--warn);border:1px solid #e3c978;border-radius:8px;padding:10px;font-size:14px;margin-top:10px}
+.msg.hide{display:none}
+.note{font-size:14px;color:var(--muted)}
+.note li{margin-bottom:4px}
+.sub{border-top:1px dashed var(--line);margin-top:8px;padding-top:6px;display:none}
+.hidden{display:none}
+.fixedval{display:block;width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:16px;background:#eef0f4;color:var(--ink);font-weight:600}
+.lock{display:inline-block;background:var(--brand2);color:var(--brand-d);font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:6px;text-transform:uppercase;letter-spacing:.03em;vertical-align:1px}
+.rates{background:var(--brand2);border:1px solid #bfe0d2;border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.rates h2{margin:0 0 4px;font-size:16px;color:var(--brand-d)}
+.rates p{margin:0 0 8px;font-size:14px}
+.rates .grid{margin-top:4px}
+.rates .fixedval{background:#fff;border-color:#bfe0d2}
+.example{font-size:14px;color:var(--muted);margin:0 0 4px}
+footer{max-width:760px;margin:0 auto;padding:0 14px 28px;font-size:13px;color:var(--muted)}
+.chk{display:flex;gap:10px;align-items:center;margin-top:14px;font-size:15px}
+.chk input{width:22px;height:22px;flex:none}
+#map{height:340px;border-radius:10px;border:1px solid var(--line);margin-top:8px;z-index:0}
+@media(max-width:520px){#map{height:300px}}
+.targets{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.targets button{background:#e9ecf1;color:var(--ink);padding:8px 12px;font-size:14px}
+.targets button.on{background:var(--brand);color:#fff;font-weight:600}
+.mk{width:28px;height:28px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45);color:#fff;font-weight:700;font-size:14px;line-height:24px;text-align:center}
+#msg{display:none}
+.errbar{display:none;background:var(--bad);color:var(--badink);padding:10px 16px;font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the estimator</a>
+<div class="errbar" id="errbar" role="alert">Something went wrong on this page. Please refresh it and try again.</div>
+<header>
+  <div class="hwrap">
+    <div class="brand"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="14" fill="#fff"/><path d="M42 20.5c-3-2.3-6.6-3.5-10.4-3.5C23 17 16 23.8 16 32s7 15 15.6 15c3.8 0 7.4-1.2 10.4-3.5" fill="none" stroke="#0b6e4f" stroke-width="7" stroke-linecap="round"/></svg><span>Commut</span></div>
+    <h1>Fare estimator</h1>
+    <p>Estimate your fare per seat and your trip total.</p>
+  </div>
+</header>
+<main id="main">
+  <nav class="tabs" id="sitetabs" aria-label="Choose a service"><a href="./" id="tab-car" class="on" aria-current="page">Car rides</a><a href="buses.html" id="tab-buses">Event buses</a></nav>
+
+  <section class="rates" aria-labelledby="car-rates-h">
+    <h2 id="car-rates-h">Commut standard rates</h2>
+    <p>These rates are fixed by Commut and cannot be changed on this page.</p>
+    <div class="grid">
+      <div><label>Trip allowance<span class="lock">Fixed</span></label><span class="fixedval" id="allow" data-fixed="150">&#8358;150</span></div>
+      <div><label>Rate per km<span class="lock">Fixed</span></label><span class="fixedval" id="rate" data-fixed="300">&#8358;300 per km</span></div>
+    </div>
+  </section>
+
+  <div class="card">
+    <h2>1. Your trip</h2>
+    <label for="dest">Where are you going? (the event or venue)</label>
+    <div class="row"><div class="field"><input type="text" id="dest" placeholder="Type a place, or paste coordinates or a Google Maps link" autocomplete="off"><div class="sugg" id="sugg-dest"></div></div><button class="pin" id="pin-dest" type="button" title="Set this point on the map">Pick on map</button></div>
+    <div class="picked" id="picked-dest"></div>
+    <div id="pickups"></div>
+    <button class="ghost" id="addPickup" type="button" style="margin-top:12px">+ Add another pickup point</button>
+    <div class="chk"><input type="checkbox" id="ret"><label for="ret" style="margin:0;color:var(--ink);font-size:15px">Include the return journey (from the venue back to each pickup)</label></div>
+  </div>
+
+  <div class="card">
+    <h2>Map</h2>
+    <div class="note" id="mapHint">Choose a field above, then tap the map to set that point. Drag a marker to move it.</div>
+    <div class="targets" id="targets"></div>
+    <div id="map" role="application" aria-label="Map for choosing your pickup points and destination"></div>
+    <div class="note" id="mapFail" style="display:none">The map could not load. You can still type places or paste coordinates above.</div>
+  </div>
+
+  <div class="card">
+    <h2>2. Riders sharing the car</h2>
+    <div class="seg" role="group" aria-label="Number of riders sharing the car">
+      <button id="mode3" class="on" type="button">Share between 3</button>
+      <button id="mode4" type="button">Share between 4</button>
+    </div>
+    <label for="seats">Number of riders sharing the car</label>
+    <input type="number" id="seats" value="3" min="1" step="1" inputmode="numeric">
+    <button class="primary" id="go" type="button">Check my fare</button>
+    <div class="msg" id="msg" role="alert"></div>
+  </div>
+
+  <div id="results" aria-live="polite"></div>
+
+  <div class="card note">
+    <ul style="margin:0;padding-left:18px">
+      <li>How your fare is worked out: whole car journey = &#8358;150 + km x &#8358;300. Your fare per seat = whole car journey divided by the riders sharing, rounded to the nearest naira.</li>
+      <li>You can paste coordinates (like 6.4281, 3.4219), a Google Maps link that shows coordinates, or a plus code. Short links such as maps.app.goo.gl cannot be opened from this page.</li>
+      <li>Place search, the map and routing use free public map services (OpenStreetMap and OSRM). Search waits a moment after you stop typing, on purpose.</li>
+    </ul>
+  </div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+/* ===== SETTINGS ===== */
+// Optional. Paste a Google Maps API key between the quotes to use Google Places suggestions. Leave empty to use OpenStreetMap search.
+var GOOGLE_MAPS_API_KEY = '';
+
+/* ===== CORE LOGIC (tested with node) ===== */
+//CORE_START
+const FIXED_CAR = Object.freeze({allowance:150, rate:300, feePct:0, vatPct:0});
+var LAGOS = {lat:6.5244, lon:3.3792, west:2.70, east:4.35, south:6.35, north:6.75};
+function computeFare(km, p){
+  var journey = p.allowance + km * p.rate;
+  var base = journey / p.seats;
+  var fee = base * p.feePct / 100;
+  var vat = fee * p.vatPct / 100;
+  var total = base + fee + vat;
+  return {km:km, journey:journey, base:base, fee:fee, vat:vat, total:total, rounded:Math.round(total)};
+}
+function naira(n, dp){
+  var d = dp === undefined ? 0 : dp;
+  return '\u20A6' + Number(n).toLocaleString('en-NG',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+// Nominatim: Nigeria only, Lagos box preferred (bounded=0 keeps nearby places such as Ogun State)
+function nominatimUrl(q){
+  return 'https://nominatim.openstreetmap.org/search?format=json&countrycodes=ng&limit=8&bounded=0&viewbox=' +
+    LAGOS.west + ',' + LAGOS.north + ',' + LAGOS.east + ',' + LAGOS.south + '&q=' + encodeURIComponent(q);
+}
+function nominatimReverseUrl(lat, lon){
+  return 'https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&lat=' + lat + '&lon=' + lon;
+}
+// Photon: biased towards Lagos; results are also filtered to Nigeria in the app
+function photonUrl(q){
+  return 'https://photon.komoot.io/api/?limit=8&lat=' + LAGOS.lat + '&lon=' + LAGOS.lon + '&zoom=10&location_bias_scale=0.5&q=' + encodeURIComponent(q);
+}
+function osrmUrl(points, withGeometry){
+  var s = points.map(function(c){return c.lon + ',' + c.lat;}).join(';');
+  return 'https://router.project-osrm.org/route/v1/driving/' + s + (withGeometry ? '?overview=full&geometries=geojson' : '?overview=false');
+}
+function inLagosBox(lat, lon){
+  return lon >= LAGOS.west && lon <= LAGOS.east && lat >= LAGOS.south && lat <= LAGOS.north;
+}
+function lagosFirst(items){
+  var a = items.filter(function(x){return inLagosBox(x.lat, x.lon);});
+  var b = items.filter(function(x){return !inLagosBox(x.lat, x.lon);});
+  return a.concat(b);
+}
+
+/* ---- pasted locations: coordinates, Google Maps links, plus codes ---- */
+var OLC_ALPHA = '23456789CFGHJMPQRVWX';
+var OLC_W = [160000, 8000, 400, 20, 1]; // size of each digit pair, in 1/8000 of a degree
+function olcDecodeFull(code){
+  var c = code.toUpperCase().replace('+','').replace(/0+$/,'');
+  var latU = 0, lonU = 0, n = Math.min(c.length, 10), last = 0;
+  n -= n % 2;
+  if(n < 2) return null;
+  for(var i = 0; i < n; i += 2){
+    var a = OLC_ALPHA.indexOf(c[i]), b = OLC_ALPHA.indexOf(c[i+1]);
+    if(a < 0 || b < 0) return null;
+    latU += a * OLC_W[i/2]; lonU += b * OLC_W[i/2]; last = OLC_W[i/2];
+  }
+  var lat = -90 + (latU + last/2) / 8000, lon = -180 + (lonU + last/2) / 8000;
+  if(!isFinite(lat) || !isFinite(lon) || lat > 90 || lon > 180) return null;
+  return {lat:lat, lon:lon};
+}
+function olcEncode8(lat, lon){
+  var la = Math.floor((lat + 90) * 400), lo = Math.floor((lon + 180) * 400);
+  var d = function(u){return [Math.floor(u/8000), Math.floor(u/400)%20, Math.floor(u/20)%20, u%20];};
+  var A = d(la), B = d(lo), s = '';
+  for(var i = 0; i < 4; i++) s += OLC_ALPHA[A[i]] + OLC_ALPHA[B[i]];
+  return s;
+}
+function olcDecode(text, refLat, refLon){
+  var m = text.trim().toUpperCase().match(/^([23456789CFGHJMPQRVWX0]{2,8})\+([23456789CFGHJMPQRVWX]*)(?:\s+.*)?$/);
+  if(!m) return null;
+  var head = m[1], tail = m[2];
+  if(head.length === 8){ return olcDecodeFull(head + '+' + tail); }
+  if(head.length % 2 !== 0 || head.length < 2 || tail.length < 2 || head.indexOf('0') >= 0) return null;
+  var prefixLen = 8 - head.length;
+  var full = olcEncode8(refLat, refLon).slice(0, prefixLen) + head + '+' + tail;
+  var r = olcDecodeFull(full);
+  if(!r) return null;
+  var res = prefixLen === 2 ? 20 : prefixLen === 4 ? 1 : 0.05;
+  if(r.lat > refLat + res/2) r.lat -= res; else if(r.lat < refLat - res/2) r.lat += res;
+  if(r.lon > refLon + res/2) r.lon -= res; else if(r.lon < refLon - res/2) r.lon += res;
+  return r;
+}
+function validLatLon(lat, lon){
+  return isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+}
+var SHORT_LINK_MSG = 'That is a short Google Maps link, and this page cannot open it. Open the link in your browser, then copy either the coordinates (in Google Maps, press and hold the pin, then copy the numbers) or the full web address from the address bar, and paste that here.';
+var NO_COORD_MSG = 'That link has no coordinates in it. Open it in Google Maps, wait for the pin to show, then copy the full web address from the address bar (it should contain numbers like @6.4281,3.4219) and paste that here. Or press and hold the pin and copy the coordinates.';
+// Returns {lat,lon,type} when text holds a location, {error:'short'|'nocoords',message} for links we cannot use, or null for ordinary search text.
+function parseLocationInput(text){
+  var t = (text || '').trim();
+  if(!t) return null;
+  var isUrl = /^(https?:\/\/|www\.)/i.test(t) || /(^|[\s\/])(maps\.google\.|google\.[a-z.]+\/maps|goo\.gl|maps\.app\.goo\.gl|g\.co\/kgs|g\.page)/i.test(t);
+  if(isUrl){
+    if(/(^|[\/\s])(maps\.app\.goo\.gl|goo\.gl|g\.co\/kgs|g\.page)(\/|$)/i.test(t)) return {error:'short', message:SHORT_LINK_MSG};
+    var u = t; try{ u = decodeURIComponent(t); }catch(e){}
+    var num = '(-?\\d{1,3}(?:\\.\\d+)?)', pair = num + '\\s*,\\s*' + num;
+    var pats = [
+      new RegExp('!3d' + num + '!4d' + num),
+      new RegExp('@' + pair),
+      new RegExp('[?&](?:q|query|ll|destination|daddr|saddr|center|viewpoint)=\\s*\\+?' + pair),
+      new RegExp('/place/\\s*' + pair)
+    ];
+    for(var i = 0; i < pats.length; i++){
+      var m = u.match(pats[i]);
+      if(m){ var la = parseFloat(m[1]), lo = parseFloat(m[2]); if(validLatLon(la, lo)) return {lat:la, lon:lo, type:'link'}; }
+    }
+    return {error:'nocoords', message:NO_COORD_MSG};
+  }
+  var oc = olcDecode(t, LAGOS.lat, LAGOS.lon);
+  if(oc) return {lat:oc.lat, lon:oc.lon, type:'pluscode'};
+  var c = t.replace(/\b(lat(itude)?|lng|lon(gitude)?)\b/ig,' ').replace(/[:=()\u00B0]/g,' ').replace(/\s+/g,' ').trim();
+  var r = c.match(/^([+-]?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*([+-]?\d{1,3}(?:\.\d+)?)$/);
+  if(r && (r[1].indexOf('.') >= 0 || r[2].indexOf('.') >= 0)){
+    var la2 = parseFloat(r[1]), lo2 = parseFloat(r[2]);
+    if(validLatLon(la2, lo2)) return {lat:la2, lon:lo2, type:'coords'};
+  }
+  return null;
+}
+//CORE_END
+
+/* ===== APP ===== */
+var MAX_PICKUPS = 4;
+var NOMINATIM_GAP_MS = 1100;   // never more than one OpenStreetMap lookup per 1.1 seconds
+var DEBOUNCE_MS = 1100;        // wait this long after typing stops before searching (OpenStreetMap search)
+var GOOGLE_DEBOUNCE_MS = 300;  // Google suggestions can be quicker
+var COLORS = ['#c0392b','#0b6e4f','#1f6fb5','#d9822b','#7b3fa0'];
+var fields = [];               // [destination, pickup 1, pickup 2, ...]
+var state = {pickups:[]};
+var activeField = null;
+var lastNom = 0;
+var searchCache = {};
+
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+var nomQueue = Promise.resolve();
+function throttled(fn, stale){
+  var run = nomQueue.then(function(){
+    if(stale && stale()) return null;
+    var wait = Math.max(0, lastNom + NOMINATIM_GAP_MS - Date.now());
+    return sleep(wait).then(function(){
+      if(stale && stale()) return null;
+      lastNom = Date.now(); return fn();
+    });
+  });
+  nomQueue = run.catch(function(){});
+  return run;
+}
+function fetchJson(url){
+  return fetch(url).then(function(r){
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+
+/* ---- place search: Nominatim, then Photon; or Google when a key is set ---- */
+function searchNominatim(q, stale){
+  return throttled(function(){
+    return fetchJson(nominatimUrl(q)).then(function(a){
+      return a.map(function(x){return {name:x.display_name, lat:parseFloat(x.lat), lon:parseFloat(x.lon)};});
+    });
+  }, stale);
+}
+function searchPhoton(q, stale){
+  return throttled(function(){
+    return fetchJson(photonUrl(q)).then(function(j){
+      return j.features.filter(function(f){return f.properties.countrycode === 'NG';}).map(function(f){
+        var p = f.properties;
+        var parts = [p.name, p.street, p.district, p.city, p.county, p.state].filter(function(v,i,a){return v && a.indexOf(v) === i;});
+        return {name:parts.join(', '), lat:f.geometry.coordinates[1], lon:f.geometry.coordinates[0]};
+      });
+    });
+  }, stale);
+}
+function searchOpenMaps(q, stale){
+  var key = q.toLowerCase();
+  if(searchCache[key]) return Promise.resolve(searchCache[key]);
+  return searchNominatim(q, stale).then(function(items){
+    return (items === null || items.length) ? items : searchPhoton(q, stale);
+  }, function(){
+    return searchPhoton(q, stale);
+  }).then(function(items){
+    if(items){ items = lagosFirst(items); searchCache[key] = items; }
+    return items;
+  });
+}
+
+/* Google Places (optional). Only used when GOOGLE_MAPS_API_KEY is filled in. */
+var googleState = {loading:null, failed:false};
+function useGoogle(){return !!GOOGLE_MAPS_API_KEY && !googleState.failed;}
+function loadGoogle(){
+  if(googleState.loading) return googleState.loading;
+  googleState.loading = new Promise(function(resolve, reject){
+    window.__commutGoogleReady = function(){google.maps.importLibrary('places').then(resolve, reject);};
+    window.gm_authFailure = function(){googleState.failed = true; console.warn('Google Maps key was rejected. Falling back to OpenStreetMap search.');};
+    var sc = document.createElement('script');
+    sc.async = true;
+    sc.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(GOOGLE_MAPS_API_KEY) + '&loading=async&v=weekly&callback=__commutGoogleReady';
+    sc.onerror = function(){reject(new Error('Google Maps could not load'));};
+    document.head.appendChild(sc);
+  });
+  googleState.loading.catch(function(){googleState.failed = true;});
+  return googleState.loading;
+}
+function searchGoogle(q, field){
+  return loadGoogle().then(function(lib){
+    if(!field.token) field.token = new lib.AutocompleteSessionToken();
+    return lib.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+      input: q,
+      sessionToken: field.token,
+      includedRegionCodes: ['ng'],
+      region: 'ng',
+      language: 'en',
+      locationBias: {center:{lat:LAGOS.lat, lng:LAGOS.lon}, radius:50000}
+    });
+  }).then(function(r){
+    return r.suggestions.filter(function(s){return s.placePrediction;}).map(function(s){
+      var pp = s.placePrediction;
+      return {name:pp.text.toString(), resolve:function(){
+        var pl = pp.toPlace();
+        return pl.fetchFields({fields:['location','formattedAddress','displayName']}).then(function(){
+          field.token = null;
+          var nm = pl.displayName && pl.formattedAddress && pl.formattedAddress.indexOf(pl.displayName) !== 0 ? pl.displayName + ', ' + pl.formattedAddress : (pl.formattedAddress || pl.displayName || pp.text.toString());
+          return {name:nm, lat:pl.location.lat(), lon:pl.location.lng()};
+        });
+      }};
+    });
+  });
+}
+function searchPlaces(q, field, stale){
+  if(useGoogle()){
+    return searchGoogle(q, field).catch(function(e){
+      console.warn('Google suggestions failed, using OpenStreetMap instead:', e && e.message);
+      googleState.failed = true;
+      return searchOpenMaps(q, stale);
+    });
+  }
+  return searchOpenMaps(q, stale);
+}
+function reverseLabel(lat, lon, stale){
+  return throttled(function(){
+    return fetchJson(nominatimReverseUrl(lat, lon)).then(function(j){
+      if(!j || !j.display_name) throw new Error('no label');
+      return j.display_name;
+    });
+  }, stale).catch(function(){return null;});
+}
+
+/* ---- routing (OSRM) ---- */
+function route(points){
+  return fetchJson(osrmUrl(points)).then(function(j){
+    if(j.code !== 'Ok' || !j.routes || !j.routes.length) throw new Error('No route found');
+    return j.routes[0].distance / 1000;
+  });
+}
+function routeWithLine(points){
+  return fetchJson(osrmUrl(points, true)).then(function(j){
+    if(j.code !== 'Ok' || !j.routes || !j.routes.length) throw new Error('No route found');
+    var rt = j.routes[0];
+    return {km:rt.distance / 1000, line:rt.geometry.coordinates.map(function(c){return [c[1], c[0]];})};
+  });
+}
+
+/* ---- map (Leaflet + OpenStreetMap tiles) ---- */
+var map = null, routeLayer = null, routeSeq = 0;
+function clearRoute(){
+  routeSeq++;
+  if(routeLayer && map){map.removeLayer(routeLayer);}
+  routeLayer = null;
+}
+function drawRoute(line, seq){
+  if(!map || seq !== routeSeq || !line || !line.length) return;
+  routeLayer = L.polyline(line, {color:'#0b6e4f', weight:5, opacity:0.8}).addTo(map);
+  map.fitBounds(routeLayer.getBounds(), {padding:[30,30]});
+}
+function markerIcon(txt, color){
+  return L.divIcon({className:'', html:'<div class="mk" style="background:' + color + '">' + txt + '</div>', iconSize:[28,28], iconAnchor:[14,14]});
+}
+function fitAll(){
+  if(!map) return;
+  var pts = fields.filter(function(f){return f.place;}).map(function(f){return [f.place.lat, f.place.lon];});
+  if(!pts.length) return;
+  if(pts.length === 1) map.setView(pts[0], 15);
+  else map.fitBounds(L.latLngBounds(pts), {padding:[40,40], maxZoom:16});
+}
+function syncMarkers(fit){
+  if(!map) return;
+  fields.forEach(function(f, i){
+    if(f.place){
+      var ll = [f.place.lat, f.place.lon], icon = markerIcon(f.kind === 'dest' ? 'D' : String(i), COLORS[i]);
+      if(!f.marker){
+        f.marker = L.marker(ll, {draggable:true, icon:icon, keyboard:false}).addTo(map);
+        f.marker.on('dragend', function(){var p = f.marker.getLatLng(); setPin(f, p.lat, p.lng, {fit:false});});
+        f.marker.on('click', function(){setActive(f);});
+      } else { f.marker.setLatLng(ll); f.marker.setIcon(icon); }
+    } else if(f.marker){ map.removeLayer(f.marker); f.marker = null; }
+  });
+  if(fit) fitAll();
+}
+function fieldLabel(f){return f.kind === 'dest' ? 'Destination' : 'Pickup ' + fields.indexOf(f);}
+function rebuildTargets(){
+  var box = document.getElementById('targets'); box.innerHTML = '';
+  fields.forEach(function(f){
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = fieldLabel(f);
+    b.className = f === activeField ? 'on' : '';
+    b.addEventListener('click', function(){setActive(f);});
+    box.appendChild(b);
+  });
+  var h = document.getElementById('mapHint');
+  h.textContent = activeField ? 'Tap the map to set: ' + fieldLabel(activeField) + '. Drag a marker to move it.' : 'Choose a field, then tap the map to set that point.';
+}
+function setActive(f, scrollToMap){
+  activeField = f;
+  fields.forEach(function(x){x.input.classList.toggle('active', x === f);});
+  rebuildTargets();
+  if(scrollToMap){document.getElementById('map').scrollIntoView({behavior:'smooth', block:'center'});}
+}
+function nextEmptyAfter(f){
+  var i = fields.indexOf(f);
+  for(var k = 1; k < fields.length; k++){
+    var g = fields[(i + k) % fields.length];
+    if(!g.place) return g;
+  }
+  return f;
+}
+function initMap(){
+  if(typeof L === 'undefined'){
+    document.getElementById('map').style.display = 'none';
+    document.getElementById('mapFail').style.display = 'block';
+    return;
+  }
+  map = L.map('map').setView([LAGOS.lat, LAGOS.lon], 10);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  map.on('click', function(e){
+    if(!activeField){return;}
+    var f = activeField;
+    setPin(f, e.latlng.lat, e.latlng.lng, {fit:false});
+    setActive(nextEmptyAfter(f));
+  });
+}
+
+/* ---- fields ---- */
+function shortName(n){return n.split(',').slice(0,2).join(',').trim();}
+function coordText(lat, lon){return lat.toFixed(5) + ', ' + lon.toFixed(5);}
+function setNote(f, text, warn){f.picked.textContent = text; f.picked.className = 'picked' + (warn ? ' warn' : '');}
+function describe(f){
+  var p = f.place, t = 'Selected: ' + p.name;
+  if(p.pin) t += ' (' + coordText(p.lat, p.lon) + ')';
+  if(!inLagosBox(p.lat, p.lon)) t += '. Note: this point is outside the Lagos area.';
+  setNote(f, t, false);
+}
+function applyPlace(f, place, o){
+  o = o || {};
+  f.place = place;
+  f.input.value = o.inputText || shortName(place.name);
+  describe(f);
+  clearRoute();
+  syncMarkers(o.fit !== false);
+}
+// Set an exact point (pasted, dropped or dragged) and look up a readable name for it
+function setPin(f, lat, lon, o){
+  var place = {name:'Pinned point (' + coordText(lat, lon) + ')', lat:lat, lon:lon, pin:true};
+  applyPlace(f, place, {inputText:coordText(lat, lon), fit:!o || o.fit !== false});
+  reverseLabel(lat, lon, function(){return f.place !== place;}).then(function(label){
+    if(f.place !== place) return;
+    if(label){place.name = label; f.input.value = shortName(label); describe(f);}
+    else {setNote(f, 'Selected: exact point ' + coordText(lat, lon) + ' (no street name found, coordinates will be used).', false);}
+  });
+}
+
+function makeField(kind, input, sugg, picked){
+  var f = {kind:kind, input:input, sugg:sugg, picked:picked, place:null, marker:null, token:null};
+  var timer = null, seq = 0;
+  function show(items, loading){
+    sugg.innerHTML = '';
+    if(loading){var d = document.createElement('div'); d.className = 'none'; d.textContent = 'Searching...'; sugg.appendChild(d);}
+    else if(!items.length){var d2 = document.createElement('div'); d2.className = 'none'; d2.textContent = 'No match. Try adding an area, e.g. "Ikeja, Lagos", or use the map.'; sugg.appendChild(d2);}
+    items.forEach(function(it){
+      var d3 = document.createElement('div'); d3.textContent = it.name;
+      d3.addEventListener('mousedown', function(e){e.preventDefault();});
+      d3.addEventListener('click', function(){
+        sugg.style.display = 'none';
+        setNote(f, 'Looking up the place...', false);
+        (it.resolve ? it.resolve() : Promise.resolve(it)).then(function(pl){
+          applyPlace(f, pl, {fit:true});
+        }).catch(function(){setNote(f, 'Could not get that place. Please pick another suggestion.', true);});
+      });
+      sugg.appendChild(d3);
+    });
+    sugg.style.display = 'block';
+  }
+  // Coordinates, Google Maps links and plus codes are handled here without any web lookup
+  function handlePasted(){
+    var parsed = parseLocationInput(input.value);
+    if(!parsed) return false;
+    clearTimeout(timer); seq++; sugg.style.display = 'none';
+    if(parsed.error){f.place = null; syncMarkers(false); clearRoute(); setNote(f, parsed.message, true); return true;}
+    setPin(f, parsed.lat, parsed.lon, {fit:true});
+    return true;
+  }
+  function doSearch(){
+    if(handlePasted()) return;
+    var q = input.value.trim();
+    if(q.length < 3){sugg.style.display = 'none'; return;}
+    var my = ++seq; show([], true);
+    var stale = function(){return my !== seq;};
+    searchPlaces(q, f, stale).then(function(items){
+      if(my === seq && items) show(items, false);
+    }).catch(function(){
+      if(my === seq){sugg.innerHTML = ''; var d = document.createElement('div'); d.className = 'none'; d.textContent = 'Place search is not reachable right now. Try again shortly, or use the map.'; sugg.appendChild(d);}
+    });
+  }
+  input.addEventListener('input', function(){
+    if(f.place){f.place = null; syncMarkers(false); clearRoute();}
+    setNote(f, '', false); seq++;
+    clearTimeout(timer); timer = setTimeout(doSearch, useGoogle() ? GOOGLE_DEBOUNCE_MS : DEBOUNCE_MS);
+  });
+  input.addEventListener('paste', function(){
+    setTimeout(function(){handlePasted();}, 0);
+  });
+  input.addEventListener('keydown', function(e){if(e.key === 'Enter'){e.preventDefault(); clearTimeout(timer); doSearch();}});
+  input.addEventListener('blur', function(){setTimeout(function(){sugg.style.display = 'none';}, 200);});
+  input.addEventListener('focus', function(){
+    setActive(f);
+    if(sugg.children.length && !f.place) sugg.style.display = 'block';
+  });
+  return f;
+}
+
+var destField = makeField('dest', document.getElementById('dest'), document.getElementById('sugg-dest'), document.getElementById('picked-dest'));
+fields.push(destField);
+document.getElementById('pin-dest').addEventListener('click', function(){setActive(destField, true);});
+
+var pickupsEl = document.getElementById('pickups');
+window.__pkSeq = 0;
+function addPickup(){
+  if(state.pickups.length >= MAX_PICKUPS) return;
+  var n = state.pickups.length + 1;
+  var wrap = document.createElement('div');
+  wrap.innerHTML = '<label>Pickup point ' + n + '</label><div class="row"><div class="field"><input type="text" placeholder="e.g. Lekki Phase 1, or paste coordinates" autocomplete="off"><div class="sugg"></div></div><button class="pin" type="button" title="Set this point on the map">Pick on map</button><button class="rm" type="button" title="Remove">Remove</button></div><div class="picked"></div>';
+  var input = wrap.querySelector('input'), sugg = wrap.querySelector('.sugg'), picked = wrap.querySelector('.picked');
+  var uid = 'pk' + (++window.__pkSeq); input.id = uid; wrap.querySelector('label').setAttribute('for', uid);
+  var item = makeField('pickup', input, sugg, picked);
+  item.el = wrap;
+  wrap.querySelector('.pin').addEventListener('click', function(){setActive(item, true);});
+  wrap.querySelector('.rm').addEventListener('click', function(){
+    if(state.pickups.length <= 1){
+      input.value = ''; item.place = null; setNote(item, '', false); syncMarkers(false); clearRoute(); return;
+    }
+    state.pickups.splice(state.pickups.indexOf(item), 1);
+    fields.splice(fields.indexOf(item), 1);
+    if(item.marker && map){map.removeLayer(item.marker); item.marker = null;}
+    pickupsEl.removeChild(wrap); clearRoute();
+    if(activeField === item) activeField = destField;
+    relabel(); syncMarkers(false);
+  });
+  state.pickups.push(item); fields.push(item); pickupsEl.appendChild(wrap); relabel();
+}
+function relabel(){
+  state.pickups.forEach(function(p,i){p.el.querySelector('label').textContent = 'Pickup point ' + (i+1);});
+  document.getElementById('addPickup').style.display = state.pickups.length >= MAX_PICKUPS ? 'none' : '';
+  rebuildTargets();
+}
+document.getElementById('addPickup').addEventListener('click', function(){addPickup(); syncMarkers(false);});
+initMap();
+addPickup();
+setActive(destField);
+
+function setMode(s){
+  document.getElementById('seats').value = s;
+  document.getElementById('mode3').className = s === 3 ? 'on' : '';
+  document.getElementById('mode4').className = s === 4 ? 'on' : '';
+}
+document.getElementById('mode3').addEventListener('click', function(){setMode(3);});
+document.getElementById('mode4').addEventListener('click', function(){setMode(4);});
+document.getElementById('seats').addEventListener('input', function(){
+  var v = parseInt(this.value,10);
+  document.getElementById('mode3').className = v === 3 ? 'on' : '';
+  document.getElementById('mode4').className = v === 4 ? 'on' : '';
+});
+
+function params(){
+  var g = function(id){return parseFloat(document.getElementById(id).value);};
+  var p = {allowance:FIXED_CAR.allowance, rate:FIXED_CAR.rate, seats:g('seats'), feePct:FIXED_CAR.feePct, vatPct:FIXED_CAR.vatPct};
+  for(var k in p){ if(!isFinite(p[k]) || p[k] < 0) return null; }
+  if(p.seats < 1) return null;
+  return p;
+}
+function msg(t){var m = document.getElementById('msg'); m.textContent = t || ''; m.style.display = t ? 'block' : 'none';}
+function esc(s){return String(s).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+function fareBlock(title, f, p){
+  return '<table>' +
+    '<tr><td>Distance</td><td>' + f.km.toFixed(1) + ' km</td></tr>' +
+    '<tr><td>Whole car journey (' + naira(p.allowance) + ' + ' + f.km.toFixed(1) + ' km x ' + naira(p.rate) + ' per km)</td><td>' + naira(f.journey) + '</td></tr>' +
+    '<tr class="tot"><td>Fare per seat (shared between ' + p.seats + ' riders)</td><td>' + naira(f.rounded) + '</td></tr></table>';
+}
+
+document.getElementById('go').addEventListener('click', function(){
+  var btn = this, out = document.getElementById('results');
+  msg('');
+  var p = params();
+  if(!p){msg('Please enter the number of riders sharing the car. It must be 1 or more.'); return;}
+  if(!destField.place){msg('Please set a destination: pick a suggestion, paste coordinates or a Google Maps link, or tap the map.'); return;}
+  var picks = state.pickups.filter(function(x){return x.place;});
+  if(!picks.length){msg('Please set at least one pickup point: pick a suggestion, paste coordinates or a Google Maps link, or tap the map.'); return;}
+  var unpicked = state.pickups.filter(function(x){return x.input.value.trim() && !x.place;});
+  if(unpicked.length){msg('One pickup has text but no selected place. Pick a suggestion, paste coordinates, or clear it.'); return;}
+  var withReturn = document.getElementById('ret').checked;
+  var dest = destField.place;
+  btn.disabled = true; btn.textContent = 'Working...'; out.innerHTML = '';
+
+  var jobs = picks.map(function(x){
+    var a = route([x.place, dest]);
+    var b = withReturn ? route([dest, x.place]) : Promise.resolve(null);
+    return Promise.all([a,b]).then(function(r){return {place:x.place, out:r[0], back:r[1]};});
+  });
+  var pts = picks.map(function(x){return x.place;});
+  var lineSeq = routeSeq;
+  var driverOut = routeWithLine(pts.concat([dest])).then(function(res){drawRoute(res.line, lineSeq); return res.km;});
+  var driverBack = withReturn ? route([dest].concat(pts.slice().reverse())) : Promise.resolve(null);
+
+  Promise.all([Promise.all(jobs), driverOut, driverBack]).then(function(r){
+    var html = '', rows = r[0];
+    rows.forEach(function(row, i){
+      var fo = computeFare(row.out, p);
+      var combined = fo.rounded;
+      html += '<div class="card"><h2>Pickup ' + (i+1) + '</h2><div class="picked">' + esc(row.place.name) + '</div>';
+      html += '<div class="res"><h3>' + (withReturn ? 'Outbound journey' : 'Your journey') + '</h3>' + fareBlock('Driving', fo, p) + '</div>';
+      if(withReturn){
+        var fb = computeFare(row.back, p); combined += fb.rounded;
+        html += '<div class="res"><h3>Return</h3>' + fareBlock('Driving', fb, p) + '</div>';
+        html += '<div class="res"><div>Your round trip fare per seat</div><div class="big">' + naira(combined) + '</div></div>';
+      } else {
+        html += '<div class="res"><div>Your fare per seat</div><div class="big">' + naira(combined) + '</div></div>';
+      }
+      html += '</div>';
+    });
+        out.innerHTML = html;
+    out.scrollIntoView({behavior:'smooth'});
+  }).catch(function(e){
+    msg('Could not get a driving distance (' + e.message + '). The free routing service may be busy or the place may not be on a road. Try again or pick a different suggestion.');
+  }).then(function(){btn.disabled = false; btn.textContent = 'Check my fare';});
+});
+</script>
+<footer>
+  <p>Distances are road distances without traffic, so they are estimates. Please confirm your final fare with Commut before you book.</p>
+</footer>
+<script>window.addEventListener('error',function(){var e=document.getElementById('errbar');if(e)e.style.display='block';});</script>
+</body>
+</html>
