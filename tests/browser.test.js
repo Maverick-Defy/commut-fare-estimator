@@ -33,6 +33,36 @@ async function setup(browser, vp) {
   });
   return {page, errors};
 }
+
+// WCAG contrast helpers
+const lum = ([r,g,b]) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+const cr = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const rgb = s => s.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+async function brandTests(page, label, file) {
+  // Official logo in the header, loaded, and the orange sampled from it
+  ok(await page.$eval('header .brand img', i => i.complete && i.naturalWidth >= 96 && i.getAttribute('src') === 'logo-96.png'), label + ' ' + file + ': official logo loaded in header');
+  ok(await page.$eval('header', h => getComputedStyle(h).backgroundColor) === 'rgb(232, 117, 26)', 'header uses the logo orange #e8751a');
+  ok(await page.$('header svg') === null, 'no self-drawn svg mark left');
+  ok(await page.$eval('link[rel="apple-touch-icon"]', l => l.getAttribute('href')) === 'apple-touch-icon.png', 'apple touch icon');
+  ok(await page.$eval('meta[property="og:image"]', m => m.content.endsWith('/og.png')), 'og image set');
+  // AA contrast on the colours the browser actually renders
+  const pairs = await page.evaluate(() => {
+    const g = (sel, prop) => { const e = document.querySelector(sel); return e ? getComputedStyle(e)[prop] : null; };
+    return {
+      headerText: [g('header h1','color'), g('header','backgroundColor')],
+      brandText: [g('header .brand span','color'), g('header','backgroundColor')],
+      body: [g('body','color'), g('body','backgroundColor')],
+      muted: [g('.note','color'), g('body','backgroundColor')],
+      tabOn: [g('#sitetabs a.on','color'), g('#sitetabs a.on','backgroundColor')],
+      tabOff: [g('#sitetabs a:not(.on)','color'), g('#sitetabs a:not(.on)','backgroundColor')],
+      lock: [g('.lock','color'), g('.lock','backgroundColor')],
+      ratesH: [g('.rates h2','color'), g('.rates','backgroundColor')],
+      fixedval: [g('.fixedval','color'), g('.fixedval','backgroundColor')],
+      ghost: [g('.ghost','color'), g('.ghost','backgroundColor')],
+    };
+  });
+  for (const [k, [fg, bg]] of Object.entries(pairs)) { if (!fg) continue; const c = cr(rgb(fg), rgb(bg)); ok(c >= 4.5, label + ' ' + file + ' contrast ' + k + ' = ' + c.toFixed(2) + ' (needs 4.5)'); }
+}
 const bodyText = page => page.evaluate(() => document.body.innerText);
 
 async function carTests(page, errors, label, vp) {
@@ -46,6 +76,8 @@ async function carTests(page, errors, label, vp) {
   ok(await page.$('link[rel=icon]') !== null, 'favicon link');
   ok(await page.$eval('html', e => e.lang) === 'en', 'html lang');
   ok(await page.$('main#main') !== null && await page.$('h1') !== null, 'landmarks');
+  await brandTests(page, label, 'car');
+  const prim = await page.$eval('#go', e => [getComputedStyle(e).color, getComputedStyle(e).backgroundColor]); ok(cr(rgb(prim[0]), rgb(prim[1])) >= 4.5, 'primary button contrast >= 4.5');
   // Locked rates: shown, not inputs
   ok((await text('#allow')) === '\u20A6150' && (await text('#rate')) === '\u20A6300 per km', 'fixed rates shown');
   ok(await page.$eval('#allow', e => e.tagName) === 'SPAN' && await page.$eval('#rate', e => e.tagName) === 'SPAN', 'rates are not inputs');
@@ -104,6 +136,8 @@ async function busTests(page, errors, label) {
   ok((await page.title()) === 'Commut Fare Estimator: Event buses', label + ' bus title');
   for (const p of ['og:title','og:description','og:image','og:url']) ok(await page.$('meta[property="' + p + '"]') !== null, 'og tag ' + p);
   ok(await page.$('link[rel=icon]') !== null, 'favicon');
+  await brandTests(page, label, 'buses');
+  const sel = await page.$eval('#tabs button.on', e => [getComputedStyle(e).color, getComputedStyle(e).backgroundColor]); ok(cr(rgb(sel[0]), rgb(sel[1])) >= 4.5, 'selected bus tab contrast >= 4.5');
   // Tabs: departure check is gone
   const tabNames = await page.$$eval('#tabs button', b => b.map(x => x.dataset.tab));
   ok(tabNames.join() === 'oneway,long,short,shuttle', 'four client tabs, no departure check');

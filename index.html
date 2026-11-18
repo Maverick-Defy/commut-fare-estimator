@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Commut Fare Estimator: Car rides</title>
 <meta name="description" content="Estimate your fare per seat and your trip total with Commut standard rates. Car rides and event buses.">
-<meta name="theme-color" content="#0b6e4f">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="theme-color" content="#e8751a">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
-<link rel="apple-touch-icon" href="favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Commut">
 <meta property="og:title" content="Commut Fare Estimator: Car rides">
@@ -24,7 +26,7 @@
 <meta name="twitter:image" content="https://maverick-defy.github.io/commut-fare-estimator/og.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
-:root{--ink:#14213d;--muted:#4f586b;--line:#d5dae3;--brand:#0b6e4f;--brand-d:#085740;--brand2:#e9f5f0;--warn:#fff6e0;--bad:#fdecec;--badink:#a02020;--bg:#f5f7fa}
+:root{--ink:#3d1e0a;--muted:#5f4130;--line:#e6d6c8;--brand:#e8751a;--brand-d:#a75311;--brand-dd:#8a4310;--cream:#fff6f1;--brand2:#fdeedd;--warn:#fff6e0;--bad:#fdecec;--badink:#a02020;--bg:#fdf7f1}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
@@ -32,11 +34,12 @@ a{color:var(--brand-d)}
 :focus-visible{outline:3px solid #1f6fb5;outline-offset:2px}
 .skip{position:absolute;left:-999px;top:0;background:#fff;color:var(--ink);padding:8px 12px;z-index:100}
 .skip:focus{left:8px;top:8px}
-header{background:var(--brand);color:#fff;padding:18px 16px 20px}
+header{background:var(--brand);color:var(--ink);padding:18px 16px 20px}
 .hwrap{max-width:760px;margin:0 auto}
 .brand{display:flex;align-items:center;gap:10px}
 .brand svg{flex:none}
-.brand span{font-size:24px;font-weight:700;letter-spacing:.01em}
+.brand img{border-radius:10px;display:block}
+.brand span{font-size:26px;font-weight:700;letter-spacing:.01em}
 header h1{margin:12px 0 0;font-size:20px;line-height:1.25;font-weight:600}
 header p{margin:6px 0 0;font-size:15px}
 main{max-width:760px;margin:0 auto;padding:14px 14px 28px}
@@ -44,7 +47,7 @@ main{max-width:760px;margin:0 auto;padding:14px 14px 28px}
 .card h2{margin:0 0 10px;font-size:17px}
 .card h3{margin:14px 0 4px;font-size:15px}
 label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
-input[type=text],input[type=number]{width:100%;padding:11px;border:1px solid #8a93a5;border-radius:8px;font-size:16px;background:#fff;color:var(--ink)}
+input[type=text],input[type=number]{width:100%;padding:11px;border:1px solid #8a7566;border-radius:8px;font-size:16px;background:#fff;color:var(--ink)}
 .field{position:relative}
 .sugg{position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);max-height:240px;overflow:auto;display:none}
 .sugg div{padding:11px;font-size:14px;border-bottom:1px solid var(--line);cursor:pointer}
@@ -58,15 +61,15 @@ button{font:inherit;border:0;border-radius:8px;padding:11px 14px;cursor:pointer;
 button:disabled{opacity:.6;cursor:default}
 .ghost{background:var(--brand2);color:var(--brand-d);font-weight:600}
 .rm{background:var(--bad);color:var(--badink)}
-.primary{background:var(--brand);color:#fff;font-weight:600;width:100%;margin-top:14px;font-size:16px}
-.primary:hover{background:var(--brand-d)}
+.primary{background:var(--brand-d);color:#fff;font-weight:600;width:100%;margin-top:14px;font-size:16px}
+.primary:hover{background:var(--brand-dd)}
 .pin{background:var(--brand2);color:var(--brand-d);font-weight:600;white-space:nowrap;padding:11px 12px}
 .seg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
-.seg button{background:#e9ecf1;color:var(--ink);flex:1;min-width:140px}
-.seg button.on,.seg button[aria-selected=true]{background:var(--brand);color:#fff;font-weight:600}
+.seg button{background:#f4e8dc;color:var(--ink);flex:1;min-width:140px}
+.seg button.on,.seg button[aria-selected=true]{background:var(--brand-d);color:#fff;font-weight:600}
 .tabs{display:flex;gap:8px;margin:0 0 16px}
-.tabs a{flex:1;text-align:center;text-decoration:none;background:#e9ecf1;color:var(--ink);padding:12px 14px;border-radius:8px;font-size:16px;min-height:44px}
-.tabs a.on{background:var(--brand);color:#fff;font-weight:600}
+.tabs a{flex:1;text-align:center;text-decoration:none;background:#f4e8dc;color:var(--ink);padding:12px 14px;border-radius:8px;font-size:16px;min-height:44px}
+.tabs a.on{background:var(--brand-d);color:#fff;font-weight:600}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:520px){.grid{grid-template-columns:1fr}.row{flex-wrap:wrap}.row .field{flex:1 1 100%}.row .pin,.row .rm{flex:1}}
 .res{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px}
@@ -86,13 +89,13 @@ tr.tot td{font-weight:700}
 .note li{margin-bottom:4px}
 .sub{border-top:1px dashed var(--line);margin-top:8px;padding-top:6px;display:none}
 .hidden{display:none}
-.fixedval{display:block;width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:16px;background:#eef0f4;color:var(--ink);font-weight:600}
+.fixedval{display:block;width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:16px;background:#f6ece2;color:var(--ink);font-weight:600}
 .lock{display:inline-block;background:var(--brand2);color:var(--brand-d);font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:6px;text-transform:uppercase;letter-spacing:.03em;vertical-align:1px}
-.rates{background:var(--brand2);border:1px solid #bfe0d2;border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.rates{background:var(--brand2);border:1px solid #f0c9a3;border-radius:12px;padding:14px 16px;margin-bottom:14px}
 .rates h2{margin:0 0 4px;font-size:16px;color:var(--brand-d)}
 .rates p{margin:0 0 8px;font-size:14px}
 .rates .grid{margin-top:4px}
-.rates .fixedval{background:#fff;border-color:#bfe0d2}
+.rates .fixedval{background:#fff;border-color:#f0c9a3}
 .example{font-size:14px;color:var(--muted);margin:0 0 4px}
 footer{max-width:760px;margin:0 auto;padding:0 14px 28px;font-size:13px;color:var(--muted)}
 .chk{display:flex;gap:10px;align-items:center;margin-top:14px;font-size:15px}
@@ -100,8 +103,8 @@ footer{max-width:760px;margin:0 auto;padding:0 14px 28px;font-size:13px;color:va
 #map{height:340px;border-radius:10px;border:1px solid var(--line);margin-top:8px;z-index:0}
 @media(max-width:520px){#map{height:300px}}
 .targets{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.targets button{background:#e9ecf1;color:var(--ink);padding:8px 12px;font-size:14px}
-.targets button.on{background:var(--brand);color:#fff;font-weight:600}
+.targets button{background:#f4e8dc;color:var(--ink);padding:8px 12px;font-size:14px}
+.targets button.on{background:var(--brand-d);color:#fff;font-weight:600}
 .mk{width:28px;height:28px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45);color:#fff;font-weight:700;font-size:14px;line-height:24px;text-align:center}
 #msg{display:none}
 .errbar{display:none;background:var(--bad);color:var(--badink);padding:10px 16px;font-size:14px;text-align:center}
@@ -112,7 +115,7 @@ footer{max-width:760px;margin:0 auto;padding:0 14px 28px;font-size:13px;color:va
 <div class="errbar" id="errbar" role="alert">Something went wrong on this page. Please refresh it and try again.</div>
 <header>
   <div class="hwrap">
-    <div class="brand"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="14" fill="#fff"/><path d="M42 20.5c-3-2.3-6.6-3.5-10.4-3.5C23 17 16 23.8 16 32s7 15 15.6 15c3.8 0 7.4-1.2 10.4-3.5" fill="none" stroke="#0b6e4f" stroke-width="7" stroke-linecap="round"/></svg><span>Commut</span></div>
+    <div class="brand"><img src="logo-96.png" width="48" height="48" alt=""><span>Commut</span></div>
     <h1>Fare estimator</h1>
     <p>Estimate your fare per seat and your trip total.</p>
   </div>
@@ -299,7 +302,7 @@ var MAX_PICKUPS = 4;
 var NOMINATIM_GAP_MS = 1100;   // never more than one OpenStreetMap lookup per 1.1 seconds
 var DEBOUNCE_MS = 1100;        // wait this long after typing stops before searching (OpenStreetMap search)
 var GOOGLE_DEBOUNCE_MS = 300;  // Google suggestions can be quicker
-var COLORS = ['#c0392b','#0b6e4f','#1f6fb5','#d9822b','#7b3fa0'];
+var COLORS = ['#c0392b','#a75311','#1f6fb5','#3d1e0a','#7b3fa0'];
 var fields = [];               // [destination, pickup 1, pickup 2, ...]
 var state = {pickups:[]};
 var activeField = null;
@@ -444,7 +447,7 @@ function clearRoute(){
 }
 function drawRoute(line, seq){
   if(!map || seq !== routeSeq || !line || !line.length) return;
-  routeLayer = L.polyline(line, {color:'#0b6e4f', weight:5, opacity:0.8}).addTo(map);
+  routeLayer = L.polyline(line, {color:'#a75311', weight:5, opacity:0.8}).addTo(map);
   map.fitBounds(routeLayer.getBounds(), {padding:[30,30]});
 }
 function markerIcon(txt, color){
